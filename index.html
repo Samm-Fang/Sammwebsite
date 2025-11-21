@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samm Fang | 萨慕堏 - Developer & Creator</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.154.0/examples/jsm/"
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div id="custom-cursor"></div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="glitch-container">
+            <img src="resources/first.jpg" alt="Loading" class="glitch-image">
+            <div class="glitch-layers">
+                <div class="glitch-layer"></div>
+                <div class="glitch-layer"></div>
+                <div class="glitch-layer"></div>
+            </div>
+        </div>
+        <div id="enter-prompt" class="hidden">点击进入</div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="main-content" class="hidden">
+        
+        <!-- Hero Section -->
+        <section id="hero">
+            <div class="hero-bg-text" data-speed="0.2">SAMM</div>
+            <div class="hero-visuals" data-speed="-0.1">
+                <div class="hero-image-wrapper">
+                    <img src="resources/heroimage.jpg" alt="Samm Fang">
+                    <div class="overlay-glitch"></div>
+                </div>
+            </div>
+            <div class="hero-info" data-speed="0.1">
+                <div class="glitch-wrapper">
+                    <h1 class="glitch-title" data-text="SAMM FANG">SAMM FANG</h1>
+                    <div class="glitch-deco"></div>
+                </div>
+                <h2 class="chinese-name">萨慕堏</h2>
+                <div class="role-badge">
+                    <span>Developer // Creator // Student</span>
+                </div>
+            </div>
+            <div class="scroll-indicator">SCROLL</div>
+            
+            <!-- Differential Decor -->
+            <div class="diff-element de-1">01</div>
+            <div class="diff-element de-2">//</div>
+        </section>
+
+        <!-- Intertwined Zone: Atomic + Projects -->
+        <div class="intertwined-zone">
+            <!-- Atomic Parallax Layer -->
+            <div id="atomic-section" class="full-width-vis" data-speed="0.5">
+                <div id="atomic-container"></div>
+            </div>
+
+            <section id="projects">
+                <h2 class="big-title" data-text="PROJECTS">PROJECTS</h2>
+                
+                <div class="project-list">
+                    <!-- DeepDeskmate -->
+                    <article class="project-item left-align tilt-card">
+                        <div class="project-visual">
+                            <div class="logo-container">
+                                <img src="resources/dds.png" alt="DeepDeskmate Logo">
+                            </div>
+                        </div>
+                        <div class="project-details">
+                            <h3>01 // DeepDeskmate</h3>
+                            <p>智能座位编排系统。利用大语言模型（LLM）赋能用户高效管理人员信息、智能编排座位。支持双模式布局与对话式微调。</p>
+                            <div class="tech-stack">
+                                <span>PYTHON</span><span>LLM</span><span>AGENT</span>
+                            </div>
+                            <a href="https://github.com/Samm-Fang/DeepDeskmate" target="_blank" rel="noopener noreferrer" class="cyber-btn">GitHub</a>
+                        </div>
+                    </article>
+
+                    <!-- Omni-Fisher -->
+                    <article class="project-item right-align tilt-card">
+                        <div class="project-details">
+                            <h3>02 // Omni-Fisher</h3>
+                            <p>猛兽派对自动化脚本(GUI版本)。基于OpenCV的视觉识别与实时统计，提供现代化的图形界面与自动化钓鱼体验。</p>
+                            <div class="tech-stack">
+                                <span>OPENCV</span><span>GUI</span><span>AUTOMATION</span>
+                            </div>
+                            <a href="https://github.com/Samm-Fang/Party-Animals-Fishing-Script" target="_blank" rel="noopener noreferrer" class="cyber-btn">GitHub</a>
+                        </div>
+                        <div class="project-visual">
+                            <div class="logo-container">
+                                <img src="resources/omf.png" alt="Omni-Fisher Logo">
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </div>
+
+        <!-- Concept / Design Section -->
+        <section id="punk-section">
+            <div class="punk-content">
+                <div class="punk-text-overlay">
+                    <h2 class="glitch-text-2">DESIGN<br>CODE</h2>
+                    <div class="punk-chinese">设计 // 编码</div>
+                </div>
+                <div class="punk-visuals">
+                    <div class="p-block p1" data-speed="0.2">Minimalism</div>
+                    <div class="p-block p2" data-speed="-0.3">Function</div>
+                    <div class="p-block p3" data-speed="0.1">Structure</div>
+                    <div class="noise-overlay"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Remaining Projects -->
+        <section id="projects-continued" class="project-list-container">
+             <div class="project-list">
+                <!-- ProxyProximity -->
+                <article class="project-item left-align tilt-card">
+                    <div class="project-visual">
+                        <div class="logo-container placeholder-logo">
+                            <span>PP</span>
+                        </div>
+                    </div>
+                    <div class="project-details">
+                        <h3>03 // ProxyProximity</h3>
+                        <p>无服务器API代理网关。专为Deno Deploy设计的动态路由系统，支持智能认证与跨域资源共享。</p>
+                        <div class="tech-stack">
+                            <span>DENO</span><span>TYPESCRIPT</span><span>EDGE</span>
+                        </div>
+                        <a href="https://github.com/Samm-Fang/ProxyProximity" target="_blank" rel="noopener noreferrer" class="cyber-btn">GitHub</a>
+                    </div>
+                </article>
+
+                <!-- NanoBind -->
+                <article class="project-item right-align tilt-card">
+                    <div class="project-details">
+                        <h3>04 // NanoBind</h3>
+                        <p>Rust系统级工具。极低资源占用的音频设备切换与注册表控制，追求极致的性能与鲁棒性。</p>
+                        <div class="tech-stack">
+                            <span>RUST</span><span>WINAPI</span><span>SYSTEM</span>
+                        </div>
+                        <span class="status-tag">/// 开发中</span>
+                    </div>
+                    <div class="project-visual">
+                        <div class="logo-container">
+                            <img src="resources/nbd.png" alt="NanoBind Logo">
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+         <!-- Plasma Reactor Section (Moved here) -->
+         <section id="plasma-section">
+            <div class="plasma-background"></div> <!-- Dark background to cover atomic elements -->
+            <div class="plasma-label">/// STELLARATOR_01</div>
+            <div id="plasma-container"></div> <!-- Stellarator Simulation -->
+            <div class="plasma-overlay">
+                <h3>PLASMA</h3>
+                <p>Stellarator Configuration</p>
+            </div>
+            <!-- Differential Decor (Expanded) -->
+            <div class="plasma-decor pd-1">MAGNETIC_FIELD: 10T</div>
+            <div class="plasma-decor pd-2">TEMP: 100,000,000 K</div>
+            <div class="plasma-decor pd-3">STATUS: STABLE</div>
+            <div class="plasma-decor pd-4">CONFINEMENT: ACTIVE</div>
+            <div class="plasma-decor pd-5">/// W7-X_MODEL</div>
+        </section>
+
+        <!-- Scrolling Gallery -->
+        <section id="gallery">
+            <div class="gallery-header">
+                <h2>GALLERY</h2>
+                <div class="deco-box">LOG_01</div>
+            </div>
+            <div class="marquee-container">
+                <div class="marquee-content">
+                    <div class="g-item"><img src="resources/work1.jpg" alt="Work 1"></div>
+                    <div class="g-item"><img src="resources/work2.jpg" alt="Work 2"></div>
+                    <div class="g-item"><img src="resources/work3.jpg" alt="Work 3"></div>
+                    <!-- Duplicate for seamless scroll -->
+                    <div class="g-item"><img src="resources/work1.jpg" alt="Work 1"></div>
+                    <div class="g-item"><img src="resources/work2.jpg" alt="Work 2"></div>
+                    <div class="g-item"><img src="resources/work3.jpg" alt="Work 3"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer id="footer">
+            <div class="footer-grid">
+                <div class="f-col">
+                    <h4>/// 链接</h4>
+                    <nav>
+                        <a href="ai-chat.html" class="nav-link glitch-hover">AI对话</a>
+                        <a href="media-tools.html" class="nav-link glitch-hover">FFMPEG工具箱</a>
+                        <a href="resources/iPhone16e-Samm.mhtml" class="nav-link glitch-hover">16E 存档</a>
+                    </nav>
+                </div>
+                <div class="f-col">
+                    <h4>/// 联系</h4>
+                    <p>邮箱: contact@sammfang.top</p>
+                    <p>GitHub: Samm-Fang</p>
+                </div>
+                <div class="f-col footer-brand">
+                    <h1>SAMM</h1>
+                    <p>&copy; 2025 Samm Fang</p>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

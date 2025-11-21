@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samm Fang | FFMPEG Tools</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            color: var(--primary-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Override some style.css defaults for this app-like page */
+        #app-container {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            max-width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--primary-color);
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-header {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tool-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-item {
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .nav-item.active {
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .back-link {
+            margin-top: auto;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-link:hover {
+            color: #fff;
+        }
+
+        /* Main Workspace */
+        .workspace {
+            background: #fff;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .panel-header {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Drop Zone */
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            background: #fafafa;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background: rgba(34, 76, 243, 0.05);
+        }
+
+        .drop-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: var(--font-sans);
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Command Preview */
+        .cmd-preview {
+            background: #1e1e1e;
+            color: #0f0;
+            font-family: var(--font-mono);
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Action Buttons */
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #1a3ec0;
+        }
+        
+        /* File List */
+        .file-list {
+            margin-top: 15px;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .file-remove {
+            color: #ff4d4f;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="custom-cursor"></div>
+    <script>
+        const cursor = document.getElementById('custom-cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+        document.querySelectorAll('a, button, input, select, .nav-item, .drop-zone').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+    </script>
+
+    <div id="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>FFMPEG GUI</span>
+            </div>
+            <nav class="tool-nav">
+                <div class="nav-item active">
+                    <span>Convert</span>
+                </div>
+                <div class="nav-item">
+                    <span>Cut / Trim</span>
+                </div>
+                <div class="nav-item">
+                    <span>Merge</span>
+                </div>
+                <div class="nav-item">
+                    <span>Compress</span>
+                </div>
+                <div class="nav-item">
+                    <span>Extract Audio</span>
+                </div>
+                <div class="nav-item">
+                    <span>Filters</span>
+                </div>
+            </nav>
+            
+            <a href="index.html" class="back-link">
+                < Return to Main Site
+            </a>
+        </aside>
+
+        <main class="workspace">
+            <div class="panel">
+                <div class="panel-header">
+                    Input Files
+                    <span style="font-size: 0.8rem; font-weight: normal; color: #888;">Supports Drag & Drop</span>
+                </div>
+                <div class="drop-zone" id="drop-zone">
+                    <div class="drop-icon">📂</div>
+                    <p>Drag files here or click to upload</p>
+                    <input type="file" id="file-input" multiple style="display: none;">
+                </div>
+                <div class="file-list" id="file-list">
+                    <!-- Files will be listed here -->
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Configuration</div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="format-select">Output Format</label>
+                        <select class="form-control" id="format-select">
+                            <option value="mp4">MP4 (H.264 + AAC)</option>
+                            <option value="mkv">MKV (Matroska)</option>
+                            <option value="avi">AVI</option>
+                            <option value="mov">MOV (ProRes / H.264)</option>
+                            <option value="mp3">MP3 (Audio Only)</option>
+                            <option value="gif">GIF (Animation)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="vcodec-select">Video Codec</label>
+                        <select class="form-control" id="vcodec-select">
+                            <option value="libx264">H.264 (libx264)</option>
+                            <option value="libx265">H.265 (HEVC)</option>
+                            <option value="copy">Copy (No Re-encoding)</option>
+                            <option value="vp9">VP9</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="acodec-select">Audio Codec</label>
+                        <select class="form-control" id="acodec-select">
+                            <option value="aac">AAC</option>
+                            <option value="mp3">MP3</option>
+                            <option value="copy">Copy (No Re-encoding)</option>
+                            <option value="an">No Audio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="res-select">Resolution</label>
+                        <select class="form-control" id="res-select">
+                            <option value="original">Original</option>
+                            <option value="1920x1080">1080p</option>
+                            <option value="1280x720">720p</option>
+                            <option value="scale=-1:480">480p</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="crf-range">CRF (Quality) - Lower is better</label>
+                        <input type="range" class="form-control" min="0" max="51" value="23" id="crf-range">
+                        <div style="text-align: right; font-size: 0.8rem; color: #666;">Value: <span id="crf-value">23</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">Command Preview</div>
+                <div class="cmd-preview" id="cmd-output">ffmpeg -i input.mp4 -c:v libx264 -crf 23 -c:a aac output.mp4<button class="copy-btn">Copy</button></div>
+                
+                <div class="actions">
+                    <button class="btn-primary">Start Processing (Demo)</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Simple Interaction Logic for the GUI Demo
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const crfRange = document.getElementById('crf-range');
+        const crfValue = document.getElementById('crf-value');
+        const cmdOutput = document.getElementById('cmd-output');
+        
+        // CRF Update
+        crfRange.addEventListener('input', (e) => {
+            crfValue.textContent = e.target.value;
+            updateCommand();
+        });
+
+        // File Upload Logic
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            fileList.innerHTML = '';
+            for (const file of files) {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
+                    <div class="file-name">📄 ${file.name}</div>
+                    <div class="file-remove" onclick="this.parentElement.remove(); updateCommand();">✕</div>
+                `;
+                fileList.appendChild(item);
+            }
+            updateCommand();
+        }
+
+        // Dynamic Command Generation
+        const inputs = document.querySelectorAll('select, input');
+        inputs.forEach(input => {
+            input.addEventListener('change', updateCommand);
+        });
+
+        function updateCommand() {
+            const format = document.getElementById('format-select').value;
+            const vcodec = document.getElementById('vcodec-select').value;
+            const acodec = document.getElementById('acodec-select').value;
+            const crf = document.getElementById('crf-range').value;
+            
+            // Check for files
+            const fileItems = fileList.querySelectorAll('.file-item');
+            const inputName = fileItems.length > 0 ? fileItems[0].querySelector('.file-name').innerText.replace('📄 ', '') : 'input_file';
+            const outputName = inputName.split('.')[0] + '_converted.' + format;
+
+            let cmd = `ffmpeg -i "${inputName}" `;
+            
+            if (vcodec !== 'copy') {
+                cmd += `-c:v ${vcodec} `;
+                if (vcodec === 'libx264' || vcodec === 'libx265') {
+                    cmd += `-crf ${crf} `;
+                }
+            } else {
+                cmd += `-c:v copy `;
+            }
+
+            if (acodec !== 'copy') {
+                cmd += `-c:a ${acodec} `;
+            } else {
+                cmd += `-c:a copy `;
+            }
+
+            cmd += `"${outputName}"`;
+            
+            // Update Text and preserve button
+            cmdOutput.innerHTML = cmd + '<button class="copy-btn">Copy</button>';
+        }
+    </script>
+</body>
+</html>
