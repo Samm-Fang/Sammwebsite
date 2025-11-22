@@ -213,9 +213,54 @@ h1, h2, h3, h4 {
 .intertwined-zone { position: relative; width: 100%; padding-top: 10vh; }
 #atomic-section {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 1; pointer-events: none; overflow: hidden;
+    z-index: 2; pointer-events: none; overflow: hidden;
 }
 #atomic-container { width: 100%; height: 120vh; position: sticky; top: 0; }
+
+/* 朋克板块激活时的差分视觉：提高对比、偏冷色、叠加一圈“轨道”与轻微故障感 */
+#atomic-container.atomic-punk-mode {
+    mix-blend-mode: screen;
+    filter: saturate(1.8) contrast(1.5) hue-rotate(-20deg);
+    opacity: 0.95;
+}
+
+/* 中央轨道圈 + 轻微故障条，只在朋克模式下出现 */
+#atomic-container.atomic-punk-mode::before,
+#atomic-container.atomic-punk-mode::after {
+    content: "";
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 3; /* 仍低于项目卡片 (#projects z-index:5)，高于粒子本身 */
+}
+
+#atomic-container.atomic-punk-mode::before {
+    width: 70vmin;
+    height: 70vmin;
+    border: 2px solid rgba(34, 76, 243, 0.8);
+    box-shadow: 0 0 25px rgba(34, 76, 243, 0.5);
+    mix-blend-mode: screen;
+}
+
+#atomic-container.atomic-punk-mode::after {
+    width: 72vmin;
+    height: 72vmin;
+    border: 1px dashed rgba(255, 0, 60, 0.6);
+    mix-blend-mode: screen;
+    animation: atomic-ring-glitch 1.6s steps(2, end) infinite;
+}
+
+@keyframes atomic-ring-glitch {
+    0%   { transform: translate(calc(-50% - 2px), calc(-50% - 1px)); opacity: 0.9; }
+    20%  { transform: translate(calc(-50% + 1px), calc(-50% + 2px)); opacity: 0.7; }
+    40%  { transform: translate(calc(-50% - 1px), calc(-50% + 1px)); opacity: 0.85; }
+    60%  { transform: translate(calc(-50% + 2px), calc(-50% - 2px)); opacity: 0.6; }
+    80%  { transform: translate(calc(-50% - 1px), calc(-50% - 1px)); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%); opacity: 0.9; }
+}
 
 /* Projects Section */
 #projects, #projects-continued {
@@ -271,20 +316,112 @@ h1, h2, h3, h4 {
 
 /* Plasma Section */
 #plasma-section {
-    height: 80vh; background: #000; position: relative;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; margin: 50px 0;
+    height: 80vh;
+    background: #000;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 50px 0;
+    border-top: 4px solid var(--highlight);
+    border-bottom: 4px solid var(--highlight);
+    /* 不设置 z-index，让内部子元素参与全局 stacking，便于粒子层插在中间 */
 }
-#plasma-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+/* 硬朗朋克 + 故障背景，作为与上一个板块的过渡 */
+.plasma-background {
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 0, 60, 0.12) 0,
+            rgba(255, 0, 60, 0.12) 1px,
+            transparent 1px,
+            transparent 3px
+        ),
+        radial-gradient(circle at 50% 30%, #111 0%, #000 55%);
+    opacity: 0.95;
+    z-index: 0;
+    mix-blend-mode: normal;
+}
+
+/* 故障扫线 */
+#plasma-section::before,
+#plasma-section::after {
+    content: "";
+    position: absolute;
+    left: -10%;
+    width: 120%;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.9),
+        rgba(255, 0, 60, 0.9),
+        transparent
+    );
+    opacity: 0.35;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    animation: plasma-scan 2.2s linear infinite;
+}
+#plasma-section::after {
+    animation-duration: 1.6s;
+    opacity: 0.25;
+}
+
+@keyframes plasma-scan {
+    0%   { top: 5%;  transform: translateY(0); }
+    50%  { top: 50%; transform: translateY(-2px); }
+    100% { top: 95%; transform: translateY(0); }
+}
+
+/* Stellarator 粒子层：希望被原子粒子压在下面 */
+#plasma-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1; /* atomic-section 是 2，所以粒子层会在它下面 */
+    mix-blend-mode: screen;
+}
+
+/* 文本与 UI 覆盖在最上层 */
 .plasma-label {
-    position: absolute; top: 20px; left: 20px;
-    color: var(--plasma); font-family: var(--font-mono); z-index: 2;
+    position: absolute;
+    top: 20px; left: 20px;
+    color: var(--plasma);
+    font-family: var(--font-mono);
+    z-index: 3;
 }
 .plasma-overlay {
-    position: relative; z-index: 2; color: #fff; text-align: center;
-    mix-blend-mode: screen; pointer-events: none;
+    position: relative;
+    z-index: 3;
+    color: #fff;
+    text-align: center;
+    mix-blend-mode: screen;
+    pointer-events: none;
 }
-.plasma-overlay h3 { font-size: 5rem; text-shadow: 0 0 20px var(--plasma); }
+.plasma-overlay h3 {
+    font-size: 5rem;
+    text-shadow: 0 0 20px var(--plasma);
+}
+
+/* 仿星器的小装饰信息，放在最上层 */
+.plasma-decor {
+    position: absolute;
+    color: var(--plasma);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    opacity: 0.7;
+    z-index: 3;
+}
+.pd-1 { top: 15%; right: 10%; }
+.pd-2 { bottom: 15%; left: 10%; }
+.pd-3 { bottom: 10%; right: 5%; }
+.pd-4 { top: 10%; left: 50%; transform: translateX(-50%); }
+.pd-5 { bottom: 5%; left: 50%; transform: translateX(-50%); }
 
 /* Punk Section */
 #punk-section {

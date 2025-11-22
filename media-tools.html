@@ -275,22 +275,22 @@
                 <span>FFMPEG GUI</span>
             </div>
             <nav class="tool-nav">
-                <div class="nav-item active">
+                <div class="nav-item active" data-tool="convert">
                     <span>Convert</span>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" data-tool="trim">
                     <span>Cut / Trim</span>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" data-tool="merge">
                     <span>Merge</span>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" data-tool="compress">
                     <span>Compress</span>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" data-tool="extract">
                     <span>Extract Audio</span>
                 </div>
-                <div class="nav-item">
+                <div class="nav-item" data-tool="filters">
                     <span>Filters</span>
                 </div>
             </nav>
@@ -316,7 +316,7 @@
                 </div>
             </div>
 
-            <div class="panel">
+            <div class="panel" id="config-panel">
                 <div class="panel-header">Configuration</div>
                 
                 <div class="form-row">
@@ -367,6 +367,50 @@
                         <div style="text-align: right; font-size: 0.8rem; color: #666;">Value: <span id="crf-value">23</span></div>
                     </div>
                 </div>
+
+                <!-- Trim specific options -->
+                <div class="form-row tool-row" id="trim-options" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label" for="trim-start">Start Time (ss or HH:MM:SS)</label>
+                        <input type="text" class="form-control" id="trim-start" placeholder="e.g. 5 or 00:00:05">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="trim-end">End Time (optional)</label>
+                        <input type="text" class="form-control" id="trim-end" placeholder="e.g. 30 or 00:00:30">
+                    </div>
+                </div>
+
+                <!-- Merge helper text -->
+                <div class="tool-row" id="merge-notice" style="display:none; margin-top:10px;">
+                    <p style="font-size:0.85rem; color:#666;">
+                        Merge 模式会生成使用 concat 的命令，你需要自行准备包含文件列表的 <code>files.txt</code>（每行一个文件路径）。
+                    </p>
+                </div>
+
+                <!-- Extract audio options -->
+                <div class="form-row tool-row" id="extract-options" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label" for="audio-format">Audio Format</label>
+                        <select class="form-control" id="audio-format">
+                            <option value="mp3">MP3</option>
+                            <option value="aac">AAC</option>
+                            <option value="wav">WAV</option>
+                            <option value="flac">FLAC</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="audio-bitrate">Audio Bitrate (kbps)</label>
+                        <input type="number" class="form-control" id="audio-bitrate" placeholder="e.g. 192">
+                    </div>
+                </div>
+
+                <!-- Filter options -->
+                <div class="tool-row" id="filter-options" style="display:none; margin-top:10px;">
+                    <div class="form-group">
+                        <label class="form-label" for="filter-string">Video Filters (-vf)</label>
+                        <input type="text" class="form-control" id="filter-string" placeholder='如: scale=1280:-1, fps=60'>
+                    </div>
+                </div>
             </div>
 
             <div class="panel">
@@ -388,6 +432,34 @@
         const crfRange = document.getElementById('crf-range');
         const crfValue = document.getElementById('crf-value');
         const cmdOutput = document.getElementById('cmd-output');
+
+        let currentTool = 'convert';
+        
+        // 左侧工具切换
+        document.querySelectorAll('.nav-item[data-tool]').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                currentTool = item.getAttribute('data-tool');
+                updateToolVisibility();
+                updateCommand();
+            });
+        });
+
+        function updateToolVisibility() {
+            const trimRow = document.getElementById('trim-options');
+            const mergeNotice = document.getElementById('merge-notice');
+            const extractRow = document.getElementById('extract-options');
+            const filterRow = document.getElementById('filter-options');
+
+            if (trimRow) trimRow.style.display = currentTool === 'trim' ? 'flex' : 'none';
+            if (mergeNotice) mergeNotice.style.display = currentTool === 'merge' ? 'block' : 'none';
+            if (extractRow) extractRow.style.display = currentTool === 'extract' ? 'flex' : 'none';
+            if (filterRow) filterRow.style.display = currentTool === 'filters' ? 'block' : 'none';
+        }
+
+        // 初始化一次
+        updateToolVisibility();
         
         // CRF Update
         crfRange.addEventListener('input', (e) => {
@@ -437,39 +509,176 @@
             input.addEventListener('change', updateCommand);
         });
 
+        function buildCommonInputNames() {
+            const fileItems = fileList.querySelectorAll('.file-item');
+            const inputName = fileItems.length > 0
+                ? fileItems[0].querySelector('.file-name').innerText.replace('📄 ', '')
+                : 'input_file';
+            const baseName = inputName.includes('.') ? inputName.substring(0, inputName.lastIndexOf('.')) : inputName;
+            return { inputName, baseName };
+        }
+
         function updateCommand() {
             const format = document.getElementById('format-select').value;
             const vcodec = document.getElementById('vcodec-select').value;
             const acodec = document.getElementById('acodec-select').value;
             const crf = document.getElementById('crf-range').value;
-            
-            // Check for files
-            const fileItems = fileList.querySelectorAll('.file-item');
-            const inputName = fileItems.length > 0 ? fileItems[0].querySelector('.file-name').innerText.replace('📄 ', '') : 'input_file';
-            const outputName = inputName.split('.')[0] + '_converted.' + format;
+            const res = document.getElementById('res-select').value;
 
-            let cmd = `ffmpeg -i "${inputName}" `;
-            
-            if (vcodec !== 'copy') {
+            const { inputName, baseName } = buildCommonInputNames();
+
+            let cmd = '';
+
+            if (currentTool === 'convert') {
+                const outputName = `${baseName}_converted.${format}`;
+                cmd = `ffmpeg -i "${inputName}" `;
+
+                // Video
+                if (vcodec !== 'copy') {
+                    cmd += `-c:v ${vcodec} `;
+                    if (vcodec === 'libx264' || vcodec === 'libx265') {
+                        cmd += `-crf ${crf} `;
+                    }
+                } else {
+                    cmd += `-c:v copy `;
+                }
+
+                // Resolution
+                if (res !== 'original' && res.indexOf('scale=') === 0) {
+                    cmd += `-vf ${res} `;
+                } else if (res !== 'original') {
+                    cmd += `-vf scale=${res} `;
+                }
+
+                // Audio
+                if (acodec === 'an') {
+                    cmd += `-an `;
+                } else if (acodec !== 'copy') {
+                    cmd += `-c:a ${acodec} `;
+                } else {
+                    cmd += `-c:a copy `;
+                }
+
+                cmd += `"${outputName}"`;
+
+            } else if (currentTool === 'trim') {
+                const start = (document.getElementById('trim-start')?.value || '').trim();
+                const end = (document.getElementById('trim-end')?.value || '').trim();
+                const outputName = `${baseName}_trim.${format}`;
+
+                cmd = `ffmpeg `;
+                if (start) cmd += `-ss ${start} `;
+                cmd += `-i "${inputName}" `;
+                if (end) cmd += `-to ${end} `;
+                cmd += `-c:v ${vcodec === 'copy' ? 'copy' : vcodec} `;
+                if (vcodec === 'libx264' || vcodec === 'libx265') {
+                    cmd += `-crf ${crf} `;
+                }
+                if (acodec === 'an') {
+                    cmd += `-an `;
+                } else if (acodec !== 'copy') {
+                    cmd += `-c:a ${acodec} `;
+                } else {
+                    cmd += `-c:a copy `;
+                }
+                cmd += `"${outputName}"`;
+
+            } else if (currentTool === 'merge') {
+                const outputName = `${baseName}_merged.${format}`;
+                cmd = `ffmpeg -f concat -safe 0 -i files.txt -c copy "${outputName}"`;
+
+            } else if (currentTool === 'compress') {
+                const outputName = `${baseName}_compressed.${format}`;
+                cmd = `ffmpeg -i "${inputName}" `;
+
+                // 强制使用压缩友好的编码
+                const vcodecUsed = vcodec === 'copy' ? 'libx264' : vcodec;
+                cmd += `-c:v ${vcodecUsed} -crf ${crf} `;
+
+                if (res !== 'original' && res.indexOf('scale=') === 0) {
+                    cmd += `-vf ${res} `;
+                } else if (res !== 'original') {
+                    cmd += `-vf scale=${res} `;
+                }
+
+                if (acodec === 'an') {
+                    cmd += `-an `;
+                } else if (acodec !== 'copy') {
+                    cmd += `-c:a ${acodec} `;
+                } else {
+                    cmd += `-c:a copy `;
+                }
+
+                cmd += `"${outputName}"`;
+
+            } else if (currentTool === 'extract') {
+                const audioFormat = document.getElementById('audio-format').value;
+                const audioBitrate = (document.getElementById('audio-bitrate')?.value || '').trim();
+                const outputName = `${baseName}_audio.${audioFormat}`;
+                const codec = acodec === 'an' ? 'mp3' : acodec;
+
+                cmd = `ffmpeg -i "${inputName}" -vn -acodec ${codec} `;
+                if (audioBitrate) {
+                    cmd += `-b:a ${audioBitrate}k `;
+                }
+                cmd += `"${outputName}"`;
+
+            } else if (currentTool === 'filters') {
+                const filter = (document.getElementById('filter-string')?.value || '').trim();
+                const outputName = `${baseName}_filtered.${format}`;
+
+                cmd = `ffmpeg -i "${inputName}" `;
+                if (filter) {
+                    cmd += `-vf "${filter}" `;
+                }
                 cmd += `-c:v ${vcodec} `;
                 if (vcodec === 'libx264' || vcodec === 'libx265') {
                     cmd += `-crf ${crf} `;
                 }
-            } else {
-                cmd += `-c:v copy `;
-            }
+                if (acodec === 'an') {
+                    cmd += `-an `;
+                } else if (acodec !== 'copy') {
+                    cmd += `-c:a ${acodec} `;
+                } else {
+                    cmd += `-c:a copy `;
+                }
+                cmd += `"${outputName}"`;
 
-            if (acodec !== 'copy') {
-                cmd += `-c:a ${acodec} `;
             } else {
-                cmd += `-c:a copy `;
+                // fallback: 当未知模式时，退回 convert
+                const outputName = `${baseName}_converted.${format}`;
+                cmd = `ffmpeg -i "${inputName}" -c:v ${vcodec} -crf ${crf} -c:a ${acodec} "${outputName}"`;
             }
-
-            cmd += `"${outputName}"`;
             
             // Update Text and preserve button
             cmdOutput.innerHTML = cmd + '<button class="copy-btn">Copy</button>';
         }
+
+        // 复制命令到剪贴板
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('copy-btn')) {
+                const text = cmdOutput.textContent.replace('Copy', '').trim();
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        e.target.textContent = 'Copied';
+                        setTimeout(() => { e.target.textContent = 'Copy'; }, 1500);
+                    });
+                } else {
+                    // 兼容方案
+                    const temp = document.createElement('textarea');
+                    temp.value = text;
+                    document.body.appendChild(temp);
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                    e.target.textContent = 'Copied';
+                    setTimeout(() => { e.target.textContent = 'Copy'; }, 1500);
+                }
+            }
+        });
+
+        // 初始化默认命令
+        updateCommand();
     </script>
 </body>
 </html>

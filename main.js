@@ -94,6 +94,21 @@ function initAtomicEffect() {
 
     if (!atomicContainer) return;
 
+    // Differential effect when Punk section is in view (no change to scroll math)
+    const punkSection = document.getElementById('punk-section');
+    if (punkSection) {
+        const punkObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    atomicContainer.classList.add('atomic-punk-mode');
+                } else {
+                    atomicContainer.classList.remove('atomic-punk-mode');
+                }
+            });
+        }, { threshold: 0.3 });
+        punkObserver.observe(punkSection);
+    }
+
     const width = atomicContainer.clientWidth;
     const height = atomicContainer.clientHeight;
 
@@ -190,9 +205,14 @@ function initAtomicEffect() {
             const viewCenter = window.innerHeight / 2;
             const stellaratorCenter = stellaratorRect.top + stellaratorRect.height / 2;
             
+            // Only interact when plasma section is on (or near) screen
+            const inView = stellaratorRect.bottom > 0 && stellaratorRect.top < window.innerHeight;
+
             // Determine if Stellarator is the focus
             const dist = Math.abs(viewCenter - stellaratorCenter);
-            let attraction = 1 - Math.min(dist / (window.innerHeight * 0.6), 1); // Tighter focus range
+            let attraction = inView
+                ? 1 - Math.min(dist / (window.innerHeight * 0.6), 1) // Tighter focus range
+                : 0;
             attraction = Math.pow(attraction, 3); // Sharper transition
 
             if (attraction > 0.01) {

@@ -81,11 +81,7 @@ async function sendMessage() {
     try {
         const isReasoning = thinkingToggle.checked;
         const model = isReasoning ? MODEL_REASONING : MODEL_NORMAL;
-        
-        // DeepSeek Reasoner usually doesn't support system prompt in the same way or might have different behavior
-        // But for standard chat completion api it should be fine.
-        // Note: DeepSeek R1 (reasoner) might output <think> tags or reasoning_content field.
-        
+
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -95,43 +91,95 @@ async function sendMessage() {
             body: JSON.stringify({
                 model: model,
                 messages: conversationHistory,
-                stream: false // Simplify for now, can switch to stream if needed
+                stream: true
             })
         });
 
         if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || 'API Request Failed');
+            let errMsg = 'API Request Failed';
+            try {
+                const errData = await response.json();
+                errMsg = errData.error?.message || errMsg;
+            } catch (_) {}
+            throw new Error(errMsg);
         }
-
-        const data = await response.json();
-        const messageContent = data.choices[0].message.content;
-        const reasoningContent = data.choices[0].message.reasoning_content; // Check if API returns this field
 
         removeLoadingIndicator(loadingId);
 
-        // Handle Response
-        if (reasoningContent) {
-            addMessageToUI('ai', messageContent, reasoningContent);
-            conversationHistory.push({ role: 'assistant', content: messageContent }); // Don't push reasoning to history usually
-        } else {
-            // Fallback: Check if <think> tags are used in content (some models do this)
-            const thinkMatch = messageContent.match(/<think>([\s\S]*?)<\/think>/);
+        // 创建流式 AI 消息容器
+        const { msgDiv, bodyDiv } = createStreamingMessage('ai');
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let done = false;
+        let buffer = '';
+        let fullContent = '';
+
+        while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            done = readerDone;
+            if (!value) continue;
+
+            const chunk = decoder.decode(value, { stream: !done });
+            buffer += chunk;
+
+            // 处理 SSE 数据，按空行分隔事件
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
+
+            for (const event of events) {
+                const lines = event
+                    .split('\n')
+                    .map(l => l.trim())
+                    .filter(Boolean);
+
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
+
+                    const dataStr = line.replace(/^data:\s*/, '');
+                    if (dataStr === '[DONE]') {
+                        done = true;
+                        break;
+                    }
+
+                    try {
+                        const json = JSON.parse(dataStr);
+                        const delta = json.choices?.[0]?.delta || {};
+                        const contentPart = delta.content || '';
+
+                        if (contentPart) {
+                            fullContent += contentPart;
+                            bodyDiv.textContent += contentPart;
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }
+                    } catch (e) {
+                        console.error('Stream parse error:', e);
+                    }
+                }
+            }
+        }
+
+        // 流结束后，用原有逻辑重渲染一次，支持 reasoning / markdown
+        if (fullContent.trim()) {
+            // 检查 <think> 标签
+            const thinkMatch = fullContent.match(/<think>([\s\S]*?)<\/think>/);
             if (thinkMatch) {
                 const thought = thinkMatch[1];
-                const answer = messageContent.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                const answer = fullContent.replace(/<think>[\s\S]*?<\/think>/, '').trim();
+                msgDiv.remove();
                 addMessageToUI('ai', answer, thought);
                 conversationHistory.push({ role: 'assistant', content: answer });
             } else {
-                addMessageToUI('ai', messageContent);
-                conversationHistory.push({ role: 'assistant', content: messageContent });
+                msgDiv.remove();
+                addMessageToUI('ai', fullContent);
+                conversationHistory.push({ role: 'assistant', content: fullContent });
             }
         }
 
     } catch (error) {
+        console.error(error);
         removeLoadingIndicator(loadingId);
         addMessageToUI('system', `Error: ${error.message}`);
-        console.error(error);
     } finally {
         sendBtn.disabled = false;
     }
@@ -164,6 +212,30 @@ function addMessageToUI(role, content, reasoning = null) {
     msgDiv.innerHTML = html;
     chatContainer.appendChild(msgDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+    return msgDiv;
+}
+
+function createStreamingMessage(role) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', role);
+
+    let headerText = role === 'user' ? 'User_Input' : 'System_Response::Samm_Fang';
+    if (role === 'system') headerText = 'System_Error';
+
+    const headerDiv = document.createElement('div');
+    headerDiv.classList.add('message-header');
+    headerDiv.textContent = headerText;
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.classList.add('markdown-body');
+
+    msgDiv.appendChild(headerDiv);
+    msgDiv.appendChild(bodyDiv);
+
+    chatContainer.appendChild(msgDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+    return { msgDiv, bodyDiv };
 }
 
 function addLoadingIndicator() {
